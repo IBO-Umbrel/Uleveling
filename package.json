@@ -20,11 +20,13 @@
     "packageManager": "pnpm@10.24.0",
     "dependencies": {
         "dotenv": "^17.2.3",
-        "node-telegram-bot-api": "^0.66.0"
+        "node-telegram-bot-api": "^0.66.0",
+        "pg": "^8.16.3"
     },
     "devDependencies": {
         "@types/node": "^20.19.26",
         "@types/node-telegram-bot-api": "^0.64.13",
+        "@types/pg": "^8.16.0",
         "@typescript-eslint/eslint-plugin": "^8.49.0",
         "@typescript-eslint/parser": "^8.49.0",
         "eslint": "^9.39.1",

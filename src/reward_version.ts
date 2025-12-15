@@ -2,6 +2,7 @@
 // use _ casing instead of camelCase
 import dotenv from "dotenv";
 import TelegramBot from "node-telegram-bot-api";
+import fs from "fs";
 import { Pool } from "pg";
 
 
@@ -47,6 +48,38 @@ async function create_tables()
             last_message_timestamp BIGINT NOT NULL,
             PRIMARY KEY (id, group_id)
         );
+        CREATE TABLE IF NOT EXISTS active_users (
+            user_id BIGINT REFERENCES users(id),
+            group_id BIGINT REFERENCES groups(id),
+            last_active_timestamp BIGINT NOT NULL,
+            PRIMARY KEY (user_id, group_id)
+        );
+        CREATE TABLE IF NOT EXISTS rewards (
+            id BIGSERIAL PRIMARY KEY,
+            group_id BIGINT REFERENCES groups(id) ON DELETE CASCADE,
+            reward_number INTEGER NOT NULL,
+            created_at BIGINT NOT NULL,
+            UNIQUE (group_id, reward_number)
+        );
+        CREATE INDEX idx_rewards_group_id ON rewards(group_id);
+        CREATE TABLE IF NOT EXISTS claimed_rewards (
+            id serial PRIMARY KEY,
+            rewards_id BIGINT REFERENCES rewards(id)
+        );
+        CREATE TABLE claimed_rewards (
+            id BIGSERIAL PRIMARY KEY,
+            group_id BIGINT NOT NULL,
+            user_id BIGINT NOT NULL,
+            reward_id BIGINT NOT NULL,
+
+            FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (reward_id) REFERENCES rewards(id) ON DELETE CASCADE,
+
+            UNIQUE (group_id, user_id, reward_id)
+        );
+        CREATE INDEX idx_claimed_rewards_group ON claimed_rewards(group_id);
+        CREATE INDEX idx_claimed_rewards_user ON claimed_rewards(user_id);
     `);
 }
 create_tables().catch((err) => console.error("Error creating tables", err));
@@ -128,39 +161,39 @@ async function update_group_messages(id: number, total_messages: number)
         [id, total_messages]
     );
 }
-// async function update_group_reward(id: number, random_reward: number)
-// {
-//     await pool.query(
-//         `
-//         update groups set
-//             random_reward = $2
-//         WHERE id = $1`,
-//         [id, random_reward]
-//     );
-// }
-// async function create_reward(group_id: number)
-// {
-//     await pool.query(`
-//         WITH next_number AS (
-//         SELECT COALESCE(MAX(reward_number), 0) + 1 AS rn
-//         FROM rewards
-//         WHERE group_id = $1
-//         )
-//         INSERT INTO rewards (group_id, reward_number)
-//         SELECT $1, rn
-//         FROM next_number`,
-//         [group_id]
-//     );
-// }
-// async function claim_reward(group_id: number, user_id: number, reward_id: number)
-// {
-//     await pool.query(`
-//         INSERT INTO claimed_rewards (group_id, user_id, reward_id)
-//         VALUES ($1, $2, $3)
-//         `,
-//         [group_id, user_id, reward_id]
-//     );
-// }
+async function update_group_reward(id: number, random_reward: number)
+{
+    await pool.query(
+        `
+        update groups set
+            random_reward = $2
+        WHERE id = $1`,
+        [id, random_reward]
+    );
+}
+async function create_reward(group_id: number)
+{
+    await pool.query(`
+        WITH next_number AS (
+        SELECT COALESCE(MAX(reward_number), 0) + 1 AS rn
+        FROM rewards
+        WHERE group_id = $1
+        )
+        INSERT INTO rewards (group_id, reward_number)
+        SELECT $1, rn
+        FROM next_number`,
+        [group_id]
+    );
+}
+async function claim_reward(group_id: number, user_id: number, reward_id: number)
+{
+    await pool.query(`
+        INSERT INTO claimed_rewards (group_id, user_id, reward_id)
+        VALUES ($1, $2, $3)
+        `,
+        [group_id, user_id, reward_id]
+    );
+}
 
 
 
@@ -169,16 +202,16 @@ async function update_group_messages(id: number, total_messages: number)
 const LEVEL_UP_EXPERIENCE = 100;
 const LEVEL_EXPERIENCE_MULTIPLIER = 1.5;
 const MESSAGE_EXPERIENCE = 10;
-// const REWARD_EXPERIENCE = 110;
+const REWARD_EXPERIENCE = 110;
 // const random_reward_after_messages = 20;
 // const LEVEL_UP_NOTIFICATION_DELAY_MS = 5 * 60 * 1000; // 5 minutes (not used currently)
 
 
 
-// function get_random_number(min: number, max: number)
-// {
-//     return Math.floor(Math.random() * (max - min + 1)) + min;
-// }
+function get_random_number(min: number, max: number)
+{
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 
 
@@ -213,6 +246,22 @@ function handle_level_up(chat_id: number, user_name: string, user: userData)
     }
     return user;
 }
+function handle_claim_command(char_id: number, user_id: number)
+{
+
+}
+async function handle_random_reward(group_id: number)
+{
+    const group = await get_group(group_id);
+
+    if (group.random_reward === 0)
+    {
+        bot.sendAnimation(group_id, "reward.gif", {caption: "Bonus XP is dropping!\n\nCongrats! 110 XP is being dropped!\nUse /claim to claim the it!"});
+        group.random_reward = get_random_number(21, 31);
+    }
+    group.random_reward! -= 1; 
+    await update_group_reward(group_id, group.random_reward!)
+}
 async function handle_group_message(chat_id: number, user_id: number, user_name: string, message: string)
 {
     console.log(`Received message from  ${chat_id}--${user_id}: ${message}`);
@@ -232,11 +281,13 @@ async function handle_group_message(chat_id: number, user_id: number, user_name:
     else
     {
         await update_group_messages(chat_id, group.total_messages);
+        handle_random_reward(chat_id);
     }
 
 
     // Update user data
     let user = await get_group_user(user_id, chat_id);
+    // console.log
     let is_new_user = false;
     if (!user)
     {
