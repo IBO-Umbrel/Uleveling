@@ -53,6 +53,15 @@ async function handle_welcome_message(chat_id: TelegramBot.ChatId, user_name: st
     ];
     await bot.sendMessage(chat_id, welcome_messages[Math.floor(Math.random() * welcome_messages.length)]);
 }
+async function handle_leave_message(chat_id: TelegramBot.ChatId, user_name: string)
+{
+    const farewell_messages = [
+        "Goodbye, " + user_name + "! We'll miss you.",
+        "Sad to see you go, " + user_name + ". Take care!",
+        user_name + " has left the chat. Farewell!"
+    ];
+    await bot.sendMessage(chat_id, farewell_messages[Math.floor(Math.random() * farewell_messages.length)]);
+}
 
 
 
@@ -251,6 +260,26 @@ bot.on("new_chat_members", (msg) =>
     }
 });
 
+
+// handle member leaves
+bot.on("left_chat_member", (msg) =>
+{
+    try
+    {
+        const chat_id = msg.chat.id;
+        const left_member = msg.left_chat_member;
+        if (left_member)
+        {
+            const user_name = left_member.username ? "@" + left_member.username : (left_member.first_name ?? "");
+            handle_leave_message(chat_id, user_name);
+        }
+    }
+    catch (error)
+    {
+        const chat_id = msg.chat.id;
+        handle_error(chat_id, (error as Error).message);
+    }
+});
 
 
 
