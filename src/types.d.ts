@@ -1,21 +1,26 @@
 /// <reference types="node" />
 
+// import type TelegramBot from "node-telegram-bot-api";
+
 
 
 interface groupData
 {
-    id: number;
+    id: TelegramBot.ChatId;
     total_messages: number;
-    random_reward?: number;
+    random_reward_range: number;
+    random_reward_after: number;
+    random_reward_active: boolean;
+    random_reward_expires_at: number;
 }
 interface userData
 {
-    id: number;
+    key_id: number;
+    id: TelegramBot.User["id"];
     group_id: groupData["id"];
     level: number;
     experience: number;
     total_messages: number;
-    last_message_timestamp: number;
 }
 interface activeUsersData
 {
