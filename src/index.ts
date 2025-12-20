@@ -156,11 +156,11 @@ async function handle_claim_command(chat_id: number, user_id: number, message_id
     const has_claimed = await db.has_claimed_reward(user.key_id);
     if (has_claimed)
     {
-        bot.sendMessage(chat_id, "You have already claimed the current random reward.", { reply_to_message_id: message_id });
+        bot.sendMessage(chat_id, "You have already claimed the current bonus reward.", { reply_to_message_id: message_id });
         return;
     }
     const is_leveled_up = await db.claim_reward(user.id, group.id);
-    await bot.sendMessage(chat_id, "You have successfully claimed your random reward! 🎉", { reply_to_message_id: message_id });
+    await bot.sendMessage(chat_id, "You have successfully claimed your bonus reward! 🎉", { reply_to_message_id: message_id });
 
 
     // Check for level up
