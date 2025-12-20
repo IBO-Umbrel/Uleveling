@@ -60,9 +60,9 @@ async function handle_level_up(chat_id: TelegramBot.ChatId, user_name: string, l
 {
     await bot.sendMessage(chat_id, `Congratulations, ${user_name}! You are now level ${level}! 🎉`);
 }
-async function handle_group_message(chat_id: TelegramBot.ChatId, user_id: userData["id"], user_name: string, message: string)
+async function handle_group_message(chat_id: TelegramBot.ChatId, user_id: userData["id"], user_name: string)
 {
-    console.log(`Received message from  ${chat_id}--${user_id}: ${message}`);
+    // console.log(`Received message from  ${chat_id}--${user_id}: ${message}`);
 
     // Update group data
     let group = await db.get_group(chat_id);
@@ -114,7 +114,7 @@ async function handle_level_command(chat_id: number, user_id: number, message_id
     const user = await db.get_user(user_id, chat_id);
     if (user)
     {
-        bot.sendMessage(chat_id, `You are level ${user.level} with ${user.experience} XP.`, { reply_to_message_id: message_id });
+        bot.sendMessage(chat_id, `You are level ${user.level} with ${user.total_messages} messages sent in total.`, { reply_to_message_id: message_id });
         return;
     }
     bot.sendMessage(chat_id, "You have no recorded activity yet.", { reply_to_message_id: message_id });
@@ -201,7 +201,7 @@ bot.on("message", (msg) =>
                 handle_claim_command(chat_id, user_id, msg.message_id, user_name);
                 return;
             }
-            handle_group_message(chat_id, user_id, user_name, text);
+            handle_group_message(chat_id, user_id, user_name);
             return;
         }
         if (text === "/start" || text === "/start@ulevelingbot")
