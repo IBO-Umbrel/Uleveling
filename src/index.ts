@@ -49,7 +49,7 @@ async function handle_welcome_message(chat_id: TelegramBot.ChatId, user_name: st
     const welcome_messages = [
         "Welcome, " + user_name + "! Glad to have you here.",
         "Hey " + user_name + ", welcome aboard!",
-        user_name + "just landed! Welcome!"
+        user_name + " just landed! Welcome!"
     ];
     await bot.sendMessage(chat_id, welcome_messages[Math.floor(Math.random() * welcome_messages.length)]);
 }
