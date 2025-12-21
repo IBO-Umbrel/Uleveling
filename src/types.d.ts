@@ -22,9 +22,15 @@ interface userData
     experience: number;
     total_messages: number;
 }
-interface activeUsersData
+interface privateChatData
 {
-    user_id: userData["id"];
-    group_id: groupData["id"];
-    last_active_timestamp: number;
+    id: number;
+    user_id: TelegramBot.User["id"];
+}
+interface notificationData
+{
+    id: number;
+    message: string;
+    scheduled_at: number;
+    expired: boolean;
 }

@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 // use _ casing instead of camelCase
-// import dotenv from "dotenv";
+import dotenv from "dotenv";
 import TelegramBot from "node-telegram-bot-api";
 import Database from "./Database";
 
 
 
-// dotenv.config();
+dotenv.config();
 
 
 
@@ -25,24 +24,24 @@ const db = new Database();
 
 
 
-function handle_start_command(chat_id: TelegramBot.ChatId)
+async function handle_start_command(chat_id: TelegramBot.ChatId)
 {
     const welcome_message = "Hello! Add Uleveling Bot to your Telegram group to start leveling engagement in your community.";
     bot.sendMessage(chat_id, welcome_message);
 }
-function handle_help_command(chat_id: TelegramBot.ChatId)
+async function handle_help_command(chat_id: TelegramBot.ChatId)
 {
     const help_message = "To use this bot, simply add it to your group and it will start tracking user engagement automatically.";
-    bot.sendMessage(chat_id, help_message);
+    await bot.sendMessage(chat_id, help_message);
 }
-function handle_unknown_command(chat_id: TelegramBot.ChatId)
+async function handle_unknown_command(chat_id: TelegramBot.ChatId)
 {
     const unknown_message = "Sorry, I didn't understand that command. Type /help for assistance.";
-    bot.sendMessage(chat_id, unknown_message);
+    await bot.sendMessage(chat_id, unknown_message);
 }
-function handle_error(chat_id: TelegramBot.ChatId, error_message: string)
+async function handle_error(chat_id: TelegramBot.ChatId, error_message: string)
 {
-    bot.sendMessage(chat_id, `Error: ${error_message}`);
+    await bot.sendMessage(chat_id, `Error: ${error_message}`);
 }
 async function handle_welcome_message(chat_id: TelegramBot.ChatId, user_name: string)
 {
@@ -123,10 +122,10 @@ async function handle_level_command(chat_id: number, user_id: number, message_id
     const user = await db.get_user(user_id, chat_id);
     if (user)
     {
-        bot.sendMessage(chat_id, `You are level ${user.level} with ${user.total_messages} messages sent in total.`, { reply_to_message_id: message_id });
+        await bot.sendMessage(chat_id, `You are level ${user.level} with ${user.total_messages} messages sent in total.`, { reply_to_message_id: message_id });
         return;
     }
-    bot.sendMessage(chat_id, "You have no recorded activity yet.", { reply_to_message_id: message_id });
+    await bot.sendMessage(chat_id, "You have no recorded activity yet.", { reply_to_message_id: message_id });
 }
 async function handle_claim_command(chat_id: number, user_id: number, message_id: number, user_name: string)
 {
@@ -134,18 +133,18 @@ async function handle_claim_command(chat_id: number, user_id: number, message_id
     const user = await db.get_user(user_id, chat_id);
     if (!user)
     {
-        bot.sendMessage(chat_id, "You have no recorded activity yet.", { reply_to_message_id: message_id });
+        await bot.sendMessage(chat_id, "You have no recorded activity yet.", { reply_to_message_id: message_id });
         return;
     }
     const group = await db.get_group(chat_id);
     if (!group)
     {
-        bot.sendMessage(chat_id, "Group data not found.", { reply_to_message_id: message_id });
+        await bot.sendMessage(chat_id, "Group data not found.", { reply_to_message_id: message_id });
         return;
     }
     if (!group.random_reward_active)
     {
-        bot.sendMessage(chat_id, "There is no active bonus reward at the moment.", { reply_to_message_id: message_id });
+        await bot.sendMessage(chat_id, "There is no active bonus reward at the moment.", { reply_to_message_id: message_id });
         return;
     }
 
@@ -156,7 +155,7 @@ async function handle_claim_command(chat_id: number, user_id: number, message_id
     {
         // deactivate reward
         await db.deactivate_random_reward(group.id);
-        bot.sendMessage(chat_id, "The bonus reward period has expired.", { reply_to_message_id: message_id });
+        await bot.sendMessage(chat_id, "The bonus reward period has expired.", { reply_to_message_id: message_id });
         return;
     }
 
@@ -165,7 +164,7 @@ async function handle_claim_command(chat_id: number, user_id: number, message_id
     const has_claimed = await db.has_claimed_reward(user.key_id);
     if (has_claimed)
     {
-        bot.sendMessage(chat_id, "You have already claimed the current bonus reward.", { reply_to_message_id: message_id });
+        await bot.sendMessage(chat_id, "You have already claimed the current bonus reward.", { reply_to_message_id: message_id });
         return;
     }
     const is_leveled_up = await db.claim_reward(user.id, group.id);
@@ -184,10 +183,38 @@ async function handle_claim_command(chat_id: number, user_id: number, message_id
 }
 
 
+async function handle_private_chats(user_id: TelegramBot.User["id"])
+{
+    // save private chat info
+    let private_chat = await db.get_private_chat(user_id);
+    if (!private_chat)
+    {
+        private_chat = await db.create_private_chat(user_id);
+    }
+}
+async function handle_notification()
+{
+    // check for available notifications
+    const notifications = await db.get_sendable_notifications();
+    for (const notification of notifications)
+    {
+        // get all private chats
+        const private_chats = await db.get_all_private_chats();
+        for (const private_chat of private_chats)
+        {
+            // send notification
+            await bot.sendMessage(private_chat.user_id, notification.message);
+        }
+        // mark notification as expired
+        await db.expire_notification(notification.id);
+    }
+}
+
+
 
 
 // handle commands & handle group messages for engagement tracking
-bot.on("message", (msg) =>
+bot.on("message", async (msg) =>
 {
     try
     {
@@ -198,32 +225,45 @@ bot.on("message", (msg) =>
         const user_name = msg.from?.username ? "@" + msg.from?.username : (msg.from?.first_name ?? "");
 
         
+        // process notifications
+        void handle_notification();
+
+
+        // group message handling
         if (msg.chat.type === "group" || msg.chat.type === "supergroup")
         {
             if (text === "/level" || text === "/level@ulevelingbot")
             {
-                handle_level_command(chat_id, user_id, msg.message_id);
+                await handle_level_command(chat_id, user_id, msg.message_id);
                 return;
             }
             if (text === "/claim" || text === "/claim@ulevelingbot")
             {
-                handle_claim_command(chat_id, user_id, msg.message_id, user_name);
+                await handle_claim_command(chat_id, user_id, msg.message_id, user_name);
                 return;
             }
-            handle_group_message(chat_id, user_id, user_name);
+            await handle_group_message(chat_id, user_id, user_name);
             return;
         }
+
+
+        // private chat handling
+        if (msg.chat.type === "private")
+        await handle_private_chats(user_id);
+
+
+        // command handling
         if (text === "/start" || text === "/start@ulevelingbot")
         {
-            handle_start_command(chat_id);
+            await handle_start_command(chat_id);
             return;
         }
         if (text === "/help" || text === "/help@ulevelingbot")
         {
-            handle_help_command(chat_id);
+            await handle_help_command(chat_id);
             return;
         }
-        handle_unknown_command(chat_id);
+        await handle_unknown_command(chat_id);
     }
     catch (error)
     {
@@ -234,7 +274,7 @@ bot.on("message", (msg) =>
 
 
 // handle new group additions
-bot.on("new_chat_members", (msg) =>
+bot.on("new_chat_members", async (msg) =>
 {
     try
     {
@@ -262,7 +302,7 @@ bot.on("new_chat_members", (msg) =>
 
 
 // handle member leaves
-bot.on("left_chat_member", (msg) =>
+bot.on("left_chat_member", async (msg) =>
 {
     try
     {
@@ -271,7 +311,7 @@ bot.on("left_chat_member", (msg) =>
         if (left_member)
         {
             const user_name = left_member.username ? "@" + left_member.username : (left_member.first_name ?? "");
-            handle_leave_message(chat_id, user_name);
+            await handle_leave_message(chat_id, user_name);
         }
     }
     catch (error)
@@ -283,5 +323,17 @@ bot.on("left_chat_member", (msg) =>
 
 
 
-bot.on("polling_error", (err) => console.error("Polling error", err));
+bot.on("polling_error", (err) =>
+{
+    console.error(`Polling error: ${err.message}`);
+});
+
+
+process.on("beforeExit", () => {
+    bot.stopPolling();
+    db.close();
+});
+
+
+
 console.log("Telegram bot started");

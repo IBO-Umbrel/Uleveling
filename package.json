@@ -9,6 +9,7 @@
         "start": "node dist/src/index.js",
         "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
         "lint": "eslint . --ext .ts",
+        "notify": "node dist/src/notify.js",
         "allman": "node allman.js",
         "format": "prettier --write .",
         "style": "pnpm run lint && pnpm run format && pnpm run allman",

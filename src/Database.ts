@@ -26,6 +26,10 @@ class Database
             }
         });
     }
+    async close()
+    {
+        await this.pool.end();
+    }
 
 
     async create_tables()
@@ -50,6 +54,16 @@ class Database
             CREATE TABLE IF NOT EXISTS rewards (
                 id SERIAL PRIMARY KEY,
                 key_id BIGINT REFERENCES users(key_id)
+            );
+            create table IF NOT EXISTS private_chats (
+                id BIGSERIAL PRIMARY KEY,
+                user_id BIGINT UNIQUE NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS notifications (
+                id BIGSERIAL PRIMARY KEY,
+                message TEXT NOT NULL,
+                scheduled_at BIGINT NOT NULL DEFAULT 0,
+                expired BOOLEAN NOT NULL default FALSE
             );
         `);
     }
@@ -179,9 +193,9 @@ class Database
                 `
                 UPDATE users
                 SET level = level + 1,
-                    experience = (experience - $3)::int
+                    experience = experience - $3
                 WHERE id = $1 AND group_id = $2`,
-                [user_id, group_id, required_experience]
+                [user_id, group_id, Math.round(required_experience)]
             );
             return true;
         }
@@ -252,6 +266,76 @@ class Database
         {
             client.release();
         }
+    }
+
+
+    async create_private_chat(user_id: privateChatData["user_id"])
+    {
+        const result = await this.pool.query(
+            `
+            INSERT INTO private_chats (user_id)
+            VALUES ($1) returning *`,
+            [user_id]
+        );
+        return result.rows[0];
+    }
+
+
+    async get_private_chat(user_id: privateChatData["user_id"]): Promise<privateChatData>
+    {
+        const result = await this.pool.query(
+            `
+            SELECT * FROM private_chats
+            WHERE user_id = $1`,
+            [user_id]
+        );
+        return result.rows[0];
+    }
+
+
+    async get_all_private_chats(): Promise<privateChatData[]>
+    {
+        const result = await this.pool.query(
+            `
+            SELECT * FROM private_chats`
+        );
+        return result.rows;
+    }
+
+
+    async schedule_notification(message: notificationData["message"], scheduled_at: notificationData["scheduled_at"])
+    {
+        await this.pool.query(
+            `
+            INSERT INTO notifications (message, scheduled_at)
+            VALUES ($1, $2)`,
+            [message, scheduled_at]
+        );
+    }
+
+
+    async get_sendable_notifications(): Promise<notificationData[]>
+    {
+        const now = Date.now();
+        const result = await this.pool.query(
+            `
+            SELECT * FROM notifications
+            WHERE scheduled_at <= $1 AND expired = $2`,
+            [now, false]
+        );
+        return result.rows;
+    }
+
+
+    async expire_notification(notification_id: notificationData["id"])
+    {
+        await this.pool.query(
+            `
+            UPDATE notifications
+            SET expired = $2
+            WHERE id = $1`,
+            [notification_id, true]
+        );
     }
 }
 
