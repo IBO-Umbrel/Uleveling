@@ -1,11 +1,11 @@
 // use _ casing instead of camelCase
-import dotenv from "dotenv";
+// import dotenv from "dotenv";
 import TelegramBot from "node-telegram-bot-api";
 import Database from "./Database";
 
 
 
-dotenv.config();
+// dotenv.config();
 
 
 
