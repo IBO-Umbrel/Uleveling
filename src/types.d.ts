@@ -7,6 +7,7 @@
 interface groupData
 {
     id: TelegramBot.ChatId;
+    username?: string | null;
     total_messages: number;
     random_reward_range: number;
     random_reward_after: number;
@@ -16,6 +17,7 @@ interface groupData
 interface userData
 {
     key_id: number;
+    username?: string | null;
     id: TelegramBot.User["id"];
     group_id: groupData["id"];
     level: number;
@@ -26,6 +28,7 @@ interface privateChatData
 {
     id: number;
     user_id: TelegramBot.User["id"];
+    username?: string | null;
 }
 interface notificationData
 {

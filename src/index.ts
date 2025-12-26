@@ -1,26 +1,22 @@
 // use _ casing instead of camelCase
-// import dotenv from "dotenv";
+import dotenv from "dotenv";
 import TelegramBot from "node-telegram-bot-api";
 import Database from "./Database";
+import { bot } from "./bot";
+import { app } from "./server";
 
 
 
-// dotenv.config();
+dotenv.config();
 
 
 
-const token = process.env.TELEGRAM_TOKEN;
-if (!token)
-{
-    console.error("Missing TELEGRAM_TOKEN in environment");
-    process.exit(1);
-}
-// creating telegram bot
-const bot = new TelegramBot(token,
-{
-    polling: true,
-});
 const db = new Database();
+
+const PUBLIC_URL = process.env.PUBLIC_URL!;
+const PORT = Number(process.env.PORT) || 3000;
+const WEBHOOK_PATH = "/telegram";
+
 
 
 
@@ -229,9 +225,14 @@ bot.on("message", async (msg) =>
         void handle_notification();
 
 
+        db.update_private_chat_username(user_id, user_name);
+
+
         // group message handling
         if (msg.chat.type === "group" || msg.chat.type === "supergroup")
         {
+            db.update_user_username(user_id, chat_id, user_name);
+            db.update_group_username(chat_id, msg.chat.username ?? msg.chat.title ?? null);
             if (text === "/level" || text === "/level@ulevelingbot")
             {
                 await handle_level_command(chat_id, user_id, msg.message_id);
@@ -323,17 +324,35 @@ bot.on("left_chat_member", async (msg) =>
 
 
 
-bot.on("polling_error", (err) =>
-{
-    console.error(`Polling error: ${err.message}`);
-});
+// bot.on("polling_error", (err) =>
+// {
+//     console.error(`Polling error: ${err.message}`);
+// });
 
-
-process.on("beforeExit", () => {
-    bot.stopPolling();
+const shutdown = () => {
     db.close();
-});
+    process.exit(0);
+};
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
+process.on("beforeExit", shutdown);
 
+
+app.post(WEBHOOK_PATH, (req, res) =>
+{
+    bot.processUpdate(req.body);
+    res.sendStatus(200);
+});
+async function start()
+{
+    await bot.setWebHook(`${PUBLIC_URL}${WEBHOOK_PATH}`);
+    console.log('Webhook set');
+
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+}
+start();
 
 
 console.log("Telegram bot started");

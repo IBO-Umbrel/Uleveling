@@ -2,7 +2,7 @@
     "name": "uleveling",
     "version": "1.0.0",
     "description": "",
-    "main": "dist/index.js",
+    "main": "dist/src/index.js",
     "scripts": {
         "build": "tsc",
         "typecheck": "tsc --noEmit",
@@ -21,10 +21,12 @@
     "packageManager": "pnpm@10.24.0",
     "dependencies": {
         "dotenv": "^17.2.3",
+        "express": "^5.2.1",
         "node-telegram-bot-api": "^0.66.0",
         "pg": "^8.16.3"
     },
     "devDependencies": {
+        "@types/express": "^5.0.6",
         "@types/node": "^20.19.26",
         "@types/node-telegram-bot-api": "^0.64.13",
         "@types/pg": "^8.16.0",

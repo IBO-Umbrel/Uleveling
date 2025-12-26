@@ -37,6 +37,7 @@ class Database
         await this.pool.query(`
             CREATE TABLE IF NOT EXISTS groups (
                 id BIGINT PRIMARY KEY,
+                username varchar(32),
                 total_messages BIGINT NOT NULL default 0,
                 random_reward_range int NOT NULL default 20,
                 random_reward_after int NOT NULL default 20,
@@ -45,6 +46,7 @@ class Database
             );
             CREATE TABLE IF NOT EXISTS users (
                 key_id BIGSERIAL PRIMARY KEY,
+                username varchar(32),
                 id BIGINT,
                 group_id BIGINT REFERENCES groups(id),
                 level INT NOT NULL default 1,
@@ -57,7 +59,8 @@ class Database
             );
             create table IF NOT EXISTS private_chats (
                 id BIGSERIAL PRIMARY KEY,
-                user_id BIGINT UNIQUE NOT NULL
+                user_id BIGINT UNIQUE NOT NULL,
+                username varchar(32)
             );
             CREATE TABLE IF NOT EXISTS notifications (
                 id BIGSERIAL PRIMARY KEY,
@@ -79,16 +82,17 @@ class Database
     }
 
 
-    async create_user(user_id: userData["id"], group_id: groupData["id"]): Promise<userData>
+    async create_user(user_id: userData["id"], group_id: groupData["id"], username?: string | null): Promise<userData>
     {
         const result = await this.pool.query(
             `
             INSERT INTO users (
                 id,
-                group_id
+                group_id,
+                username
             )
-            VALUES ($1, $2) returning *`,
-            [user_id, group_id]
+            VALUES ($1, $2, $3) returning *`,
+            [user_id, group_id, username]
         );
         return result.rows[0];
     }
@@ -104,15 +108,15 @@ class Database
     }
 
 
-    async create_group(group_id: groupData["id"]): Promise<groupData>
+    async create_group(group_id: groupData["id"], username?: string | null): Promise<groupData>
     {
         const result = await this.pool.query(
             `
             INSERT INTO groups (
-                id
+                id, username
             )
-            VALUES ($1) returning *`,
-            [group_id]
+            VALUES ($1, $2) returning *`,
+            [group_id, username]
         );
         return result.rows[0];
     }
@@ -269,13 +273,13 @@ class Database
     }
 
 
-    async create_private_chat(user_id: privateChatData["user_id"])
+    async create_private_chat(user_id: privateChatData["user_id"], username?: string | null): Promise<privateChatData>
     {
         const result = await this.pool.query(
             `
-            INSERT INTO private_chats (user_id)
-            VALUES ($1) returning *`,
-            [user_id]
+            INSERT INTO private_chats (user_id, username)
+            VALUES ($1, $2) returning *`,
+            [user_id, username]
         );
         return result.rows[0];
     }
@@ -335,6 +339,39 @@ class Database
             SET expired = $2
             WHERE id = $1`,
             [notification_id, true]
+        );
+    }
+
+
+    // update usernames
+    async update_group_username(group_id: groupData["id"], username: string | null)
+    {
+        await this.pool.query(
+            `
+            UPDATE groups
+            SET username = $2
+            WHERE id = $1`,
+            [group_id, username]
+        );
+    }
+    async update_private_chat_username(user_id: privateChatData["user_id"], username: string | null)
+    {
+        await this.pool.query(
+            `
+            UPDATE private_chats
+            SET username = $2
+            WHERE user_id = $1`,
+            [user_id, username]
+        );
+    }
+    async update_user_username(user_id: userData["id"], group_id: groupData["id"], username: string | null)
+    {
+        await this.pool.query(
+            `
+            UPDATE users
+            SET username = $3
+            WHERE id = $1 AND group_id = $2`,
+            [user_id, group_id, username]
         );
     }
 }
