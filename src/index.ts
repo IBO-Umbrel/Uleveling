@@ -201,10 +201,17 @@ async function handle_notification()
             for (const group of groups)
             {
                 // send notification
-                if (notification.photo_url)
-                    await bot.sendPhoto(group.id, notification.photo_url, { caption: notification.message });
-                else
-                    await bot.sendMessage(group.id, notification.message);
+                try
+                {
+                    if (notification.photo_url)
+                        await bot.sendPhoto(group.id, notification.photo_url, { caption: notification.message });
+                    else
+                        await bot.sendMessage(group.id, notification.message);
+                }
+                catch (error)
+                {
+                    console.error(`Failed to send notification to group ${group.id}: ${(error as Error).message}`);
+                }
             }
             // mark notification as expired
             await db.expire_notification(notification.id);
@@ -216,10 +223,17 @@ async function handle_notification()
         for (const private_chat of private_chats)
         {
             // send notification
-            if (notification.photo_url)
-                await bot.sendPhoto(private_chat.user_id, notification.photo_url, { caption: notification.message });
-            else
-                await bot.sendMessage(private_chat.user_id, notification.message);
+            try
+            {
+                if (notification.photo_url)
+                    await bot.sendPhoto(private_chat.user_id, notification.photo_url, { caption: notification.message });
+                else
+                    await bot.sendMessage(private_chat.user_id, notification.message);
+            }
+            catch (error)
+            {
+                console.error(`Failed to send notification to user ${private_chat.user_id}: ${(error as Error).message}`);
+            }
         }
         // mark notification as expired
         await db.expire_notification(notification.id);
