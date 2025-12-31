@@ -194,12 +194,32 @@ async function handle_notification()
     const notifications = await db.get_sendable_notifications();
     for (const notification of notifications)
     {
+        if (notification.for_groups)
+        {
+            // get all groups
+            const groups = await db.get_all_groups();
+            for (const group of groups)
+            {
+                // send notification
+                if (notification.photo_url)
+                    await bot.sendPhoto(group.id, notification.photo_url, { caption: notification.message });
+                else
+                    await bot.sendMessage(group.id, notification.message);
+            }
+            // mark notification as expired
+            await db.expire_notification(notification.id);
+            continue;
+        }
+
         // get all private chats
         const private_chats = await db.get_all_private_chats();
         for (const private_chat of private_chats)
         {
             // send notification
-            await bot.sendMessage(private_chat.user_id, notification.message);
+            if (notification.photo_url)
+                await bot.sendPhoto(private_chat.user_id, notification.photo_url, { caption: notification.message });
+            else
+                await bot.sendMessage(private_chat.user_id, notification.message);
         }
         // mark notification as expired
         await db.expire_notification(notification.id);

@@ -36,4 +36,6 @@ interface notificationData
     message: string;
     scheduled_at: number;
     expired: boolean;
+    photo_url?: string | null;
+    for_groups: boolean;
 }

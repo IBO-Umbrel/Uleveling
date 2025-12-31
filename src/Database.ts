@@ -66,7 +66,9 @@ class Database
                 id BIGSERIAL PRIMARY KEY,
                 message TEXT NOT NULL,
                 scheduled_at BIGINT NOT NULL DEFAULT 0,
-                expired BOOLEAN NOT NULL default FALSE
+                expired BOOLEAN NOT NULL default FALSE,
+                for_groups BOOLEAN NOT NULL default FALSE,
+                photo_url TEXT
             );
         `);
     }
@@ -105,6 +107,13 @@ class Database
             [group_id]
         );
         return result.rows[0];
+    }
+    async get_all_groups(): Promise<groupData[]>
+    {
+        const result = await this.pool.query(
+            "SELECT * FROM groups"
+        );
+        return result.rows;
     }
 
 
@@ -307,13 +316,13 @@ class Database
     }
 
 
-    async schedule_notification(message: notificationData["message"], scheduled_at: notificationData["scheduled_at"])
+    async schedule_notification(message: notificationData["message"], scheduled_at: notificationData["scheduled_at"], photo_url?: notificationData["photo_url"] | null, for_groups: boolean = false)
     {
         await this.pool.query(
             `
-            INSERT INTO notifications (message, scheduled_at)
-            VALUES ($1, $2)`,
-            [message, scheduled_at]
+            INSERT INTO notifications (message, scheduled_at, photo_url, for_groups)
+            VALUES ($1, $2, $3, $4)`,
+            [message, scheduled_at, photo_url, for_groups]
         );
     }
 
