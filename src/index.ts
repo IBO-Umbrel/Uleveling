@@ -374,8 +374,8 @@ process.on("beforeExit", shutdown);
 
 app.post(WEBHOOK_PATH, (req, res) =>
 {
-    bot.processUpdate(req.body);
     res.sendStatus(200);
+    bot.processUpdate(req.body);
 });
 async function start()
 {
