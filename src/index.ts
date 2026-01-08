@@ -1,9 +1,9 @@
 // use _ casing instead of camelCase
 // import dotenv from "dotenv";
 import TelegramBot from "node-telegram-bot-api";
-import Database from "./Database";
-import { bot } from "./bot";
-import { app } from "./server";
+import Database from "./lib/Database";
+import { bot } from "./lib/bot";
+import { app } from "./lib/server";
 
 
 
@@ -358,10 +358,6 @@ bot.on("left_chat_member", async (msg) =>
 
 
 
-// bot.on("polling_error", (err) =>
-// {
-//     console.error(`Polling error: ${err.message}`);
-// });
 
 const shutdown = () => {
     db.close();
