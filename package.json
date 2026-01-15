@@ -6,8 +6,8 @@
     "scripts": {
         "build": "tsc",
         "typecheck": "tsc --noEmit",
-        "start": "node dist/src/index.js",
-        "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+        "start": "node dist/src/tindex.js",
+        "dev": "ts-node-dev --respawn --transpile-only src/tindex.ts",
         "lint": "eslint . --ext .ts",
         "notify": "node dist/src/notify.js",
         "allman": "node allman.js",
@@ -20,6 +20,8 @@
     "license": "ISC",
     "packageManager": "pnpm@10.24.0",
     "dependencies": {
+        "@prisma/adapter-pg": "^7.2.0",
+        "@prisma/client": "^7.2.0",
         "dotenv": "^17.2.3",
         "express": "^5.2.1",
         "node-telegram-bot-api": "^0.66.0",

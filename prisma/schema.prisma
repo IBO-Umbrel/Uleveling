@@ -15,33 +15,83 @@ datasource db {
   // directUrl = env("DIRECT_URL")
 }
 
-model Userp {
-  id            BigInt    @id @default(autoincrement())
-  tg_id         BigInt    @unique
-  username      String?   @unique
-  name          String
-  level         Int       @default(1)
-  experience    BigInt    @default(0)
-  message_count BigInt    @default(0)
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
-  groups        Groupsp[]
+model Users {
+  id                   BigInt           @id @default(autoincrement())
+  tg_id                BigInt           @unique
+  username             String?
+  name                 String?
+  is_premium           Boolean          @default(false)
+  notification_enabled Boolean          @default(false)
+  created_at           DateTime         @default(now())
+  group_memberships    GroupUsers[]
+  claimed_rewards      ClaimedRewards[]
+  groups               Groups[]
+
+  @@index([username])
 }
 
-model Groupsp {
-  id                BigInt   @id @default(autoincrement())
-  owner             Userp    @relation(fields: [owner_id], references: [id])
-  owner_id          BigInt
-  username          String?
-  title             String?
-  level             Int      @default(1)
-  experience        BigInt   @default(0)
-  message_count     BigInt   @default(0)
-  active            Boolean  @default(true)
-  reward_range      Int      @default(20)
-  reward_after      Int      @default(20)
-  reward_active     Boolean  @default(false)
-  reward_expires_at BigInt   @default(x0)
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+model Groups {
+  id                 BigInt       @id @default(autoincrement())
+  tg_id              BigInt       @unique
+  owner              Users?       @relation(fields: [owner_id], references: [id])
+  owner_id           BigInt?
+  username           String?
+  title              String?
+  premium_user_count Int          @default(0)
+  active             Boolean      @default(true)
+  created_at         DateTime     @default(now())
+  group_users        GroupUsers[]
+  rewards            Rewards[]
+}
+
+model GroupUsers {
+  id            BigInt   @id @default(autoincrement())
+  group         Groups   @relation(fields: [group_id], references: [id])
+  group_id      BigInt
+  user          Users    @relation(fields: [user_id], references: [id])
+  user_id       BigInt
+  level         Int      @default(1)
+  experience    BigInt   @default(0)
+  message_count BigInt   @default(0)
+  is_admin      Boolean  @default(false)
+  created_at    DateTime @default(now())
+
+  @@unique([group_id, user_id])
+  @@index([group_id])
+  @@index([user_id])
+}
+
+model Rewards {
+  id               BigInt           @id @default(autoincrement())
+  group            Groups           @relation(fields: [group_id], references: [id])
+  group_id         BigInt
+  amount           Int
+  appearance_range Int              @default(20)
+  appearance_after Int              @default(20)
+  active           Boolean          @default(true)
+  expires_at       BigInt           @default(0)
+  created_at       DateTime         @default(now())
+  claimed_rewards  ClaimedRewards[]
+}
+
+model ClaimedRewards {
+  id         BigInt   @id @default(autoincrement())
+  reward     Rewards  @relation(fields: [reward_id], references: [id])
+  reward_id  BigInt
+  user       Users    @relation(fields: [user_id], references: [id])
+  user_id    BigInt
+  claimed_at DateTime @default(now())
+
+  @@unique([reward_id, user_id])
+  @@index([user_id])
+}
+
+model Notifications {
+  id           BigInt   @id @default(autoincrement())
+  message      String
+  image_url    String?
+  sent         Boolean  @default(false)
+  for_groups   Boolean  @default(false)
+  scheduled_at BigInt
+  created_at   DateTime @default(now())
 }

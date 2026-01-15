@@ -19,25 +19,25 @@ const WEBHOOK_PATH = "/telegram";
 
 
 
-
+// messages handling functions
 async function handle_start_command(chat_id: TelegramBot.ChatId)
 {
     const welcome_message = "Hello! Add Uleveling Bot to your Telegram group to start leveling engagement in your community.";
-    bot.sendMessage(chat_id, welcome_message);
+    await bot.telegram.sendMessage(chat_id, welcome_message);
 }
 async function handle_help_command(chat_id: TelegramBot.ChatId)
 {
     const help_message = "To use this bot, simply add it to your group and it will start tracking user engagement automatically.";
-    await bot.sendMessage(chat_id, help_message);
+    await bot.telegram.sendMessage(chat_id, help_message);
 }
 async function handle_unknown_command(chat_id: TelegramBot.ChatId)
 {
     const unknown_message = "Sorry, I didn't understand that command. Type /help for assistance.";
-    await bot.sendMessage(chat_id, unknown_message);
+    await bot.telegram.sendMessage(chat_id, unknown_message);
 }
 async function handle_error(chat_id: TelegramBot.ChatId, error_message: string)
 {
-    await bot.sendMessage(chat_id, `Error: ${error_message}`);
+    await bot.telegram.sendMessage(chat_id, `Error: ${error_message}`);
 }
 async function handle_welcome_message(chat_id: TelegramBot.ChatId, user_name: string)
 {
@@ -46,7 +46,7 @@ async function handle_welcome_message(chat_id: TelegramBot.ChatId, user_name: st
         "Hey " + user_name + ", welcome aboard!",
         user_name + " just landed! Welcome!"
     ];
-    await bot.sendMessage(chat_id, welcome_messages[Math.floor(Math.random() * welcome_messages.length)]);
+    await bot.telegram.sendMessage(chat_id, welcome_messages[Math.floor(Math.random() * welcome_messages.length)]);
 }
 async function handle_leave_message(chat_id: TelegramBot.ChatId, user_name: string)
 {
@@ -55,14 +55,15 @@ async function handle_leave_message(chat_id: TelegramBot.ChatId, user_name: stri
         "Sad to see you go, " + user_name + ". Take care!",
         user_name + " has left the chat. Farewell!"
     ];
-    await bot.sendMessage(chat_id, farewell_messages[Math.floor(Math.random() * farewell_messages.length)]);
+    await bot.telegram.sendMessage(chat_id, farewell_messages[Math.floor(Math.random() * farewell_messages.length)]);
 }
 
 
 
+// engagement & leveling functions
 async function handle_level_up(chat_id: TelegramBot.ChatId, user_name: string, level: userData["level"])
 {
-    await bot.sendMessage(chat_id, `Congratulations, ${user_name}! You are now level ${level}! 🎉`);
+    await bot.telegram.sendMessage(chat_id, `Congratulations, ${user_name}! You are now level ${level}! 🎉`);
 }
 async function handle_group_message(chat_id: TelegramBot.ChatId, user_id: userData["id"], user_name: string)
 {

@@ -137,3 +137,4 @@ dist
 .pnp.*
 
 /generated/prisma
+migrations/
