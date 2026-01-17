@@ -295,7 +295,7 @@ bot.on("message", async (ctx) =>
     {
         return;
     }
-    console.log(ctx.text);
+    // console.log(ctx.text);
 
     // checking groups, users, and groupUsers
     let group = await prisma.groups.findUnique({
