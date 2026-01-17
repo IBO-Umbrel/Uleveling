@@ -340,7 +340,7 @@ bot.command("level", async (ctx) =>
         return;
     }
     await ctx.react("👀", true);
-    ctx.replyWithMarkdownV2("You are *level " + group_user.level + "* with *" + group_user.message_count + " messages*.");
+    ctx.replyWithMarkdownV2("You are *level " + group_user.level + "* with *" + group_user.message_count + " messages*\\!");
 });
 
 
