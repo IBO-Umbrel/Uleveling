@@ -90,47 +90,11 @@ pnpm run build
 pnpm run start
 ```
 
----
+Helpful scripts
 
-## Environment Configuration
-
-Create a `.env` file with at least the following:
-
-```
-TELEGRAM_TOKEN=your_bot_token_here
-DATABASE_URL=postgres://user:password@host:port/dbname
-PORT=3000
-```
-
-Replace with your actual values.
-
----
-
-## Available Scripts
-
-From the project root:
-
-| Script               | Description                                         |
-| -------------------- | --------------------------------------------------- |
-| `pnpm run dev`       | Run in development with auto-restart (ts-node-dev)  |
-| `pnpm run build`     | Compile TypeScript into JavaScript (`dist/`)        |
-| `pnpm run start`     | Run the compiled bot                                |
-| `pnpm run typecheck` | Perform TypeScript type check                       |
-| `pnpm run lint`      | Run ESLint                                          |
-| `pnpm run format`    | Format code with Prettier                           |
-| `pnpm run style`     | Run lint + format + additional script (`allman.js`) |
-| `pnpm run notify`    | Run notification script (if implemented)            |
-
-Scripts are defined in `package.json`. ([GitHub][1])
-
----
-
-## Configuration & Deployment
-
-Deploy the bot on a server or cloud provider:
-
-* **Heroku** – set environment variables and worker dyno
-* **Docker** – containerize the application
-* **VPS** – install Node.js, setup `pm2` or systemd
-
-Ensure your bot token and database credentials are securely stored.
+- `pnpm run dev` — development (ts-node-dev)
+- `pnpm run build` — compile TypeScript to `dist`
+- `pnpm run start` — run compiled code
+- `pnpm run typecheck` — run TypeScript type check
+- `pnpm run lint` — run ESLint
+- `pnpm run format` — format with Prettier
