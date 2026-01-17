@@ -43,12 +43,13 @@ async function handle_leave_message(chat_id: number, user_name: string)
 }
 
 
-async function update_exp(id: bigint, new_exp: number)
+async function update_message_exp(id: bigint, new_exp: number, new_message_count: number)
 {
     // updating exp
     const group_user = await prisma.groupUsers.update({
         data: {
-            experience: new_exp
+            experience: new_exp,
+            message_count: new_message_count
         },
         where: {
             id,
@@ -150,7 +151,6 @@ bot.command("claim", async (ctx) =>
         ctx.reply("This command can be used in groups only!", {reply_parameters: {message_id: ctx.msgId}});
         return;
     }
-
     
     // checking groups, users, and groupUsers
     let group = await prisma.groups.findUnique({
@@ -284,6 +284,64 @@ bot.command("claim", async (ctx) =>
         ctx.reply("You have successfully claimed your bonus EXP! 🎉", {reply_parameters: {message_id: ctx.msgId}});
     }
 });
+bot.command("level", async (ctx) =>
+{
+    if (ctx.chat.type === "private")
+    {
+        ctx.reply("This command can be used in groups only!", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+
+    // checking groups, users, and groupUsers
+    let group = await prisma.groups.findUnique({
+        where: {
+            tg_id: ctx.chat.id
+        }
+    });
+    if (!group)
+    {
+        group = await prisma.groups.create({
+            data: {
+                tg_id: ctx.chat.id,
+                username: ctx.chat.type === "supergroup" ? ctx.chat.username : null,
+                title: ctx.chat.type === "supergroup" ? ctx.chat.title : null
+            }
+        });
+    }
+    let user = await prisma.users.findUnique({
+        where: {
+            tg_id: ctx.from.id
+        }
+    });
+    if (!user)
+    {
+        user = await prisma.users.create({
+            data: {
+                tg_id: ctx.from.id,
+                username: ctx.from.username,
+                name: ctx.from.first_name,
+                is_premium: ctx.from.is_premium
+            }
+        });
+    }
+    const group_user = await prisma.groupUsers.findUnique({
+        where: {
+            group_id_user_id: {
+                group_id: group.id,
+                user_id: user.id
+            }
+        }
+    });
+
+    // check conditions
+    if (!group_user)
+    {
+        ctx.reply("You have no recorded activity yet.", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    await ctx.react("👀", true);
+    ctx.replyWithMarkdownV2("You are *level " + group_user.level + "* with *" + group_user.message_count + " messages*.");
+});
 
 
 
@@ -355,7 +413,7 @@ bot.on("message", async (ctx) =>
 
     // increasing exp
     const exp = ctx.msg.has("text") ? TEXT_MESSAGE_EXP : OTHER_MESSAGE_EXP;
-    const did_level_up = await update_exp(group_user.id, Number(group_user.experience) + exp);
+    const did_level_up = await update_message_exp(group_user.id, Number(group_user.experience) + exp, Number(group_user.message_count) + 1);
     if (did_level_up)
     {
         // letting user know they leveled up
