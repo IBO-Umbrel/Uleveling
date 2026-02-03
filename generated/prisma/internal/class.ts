@@ -17,8 +17,8 @@ import type * as Prisma from "./prismaNamespace"
 
 const config: runtime.GetPrismaClientConfig = {
   "previewFeatures": [],
-  "clientVersion": "7.2.0",
-  "engineVersion": "0c8ef2ce45c83248ab3df073180d5eda9e8be7a3",
+  "clientVersion": "7.3.0",
+  "engineVersion": "9d6ad21cbbceab97458517b147a6a09ff43aa735",
   "activeProvider": "postgresql",
   "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  // url       = env(\"DATABASE_URL\")\n  // directUrl = env(\"DIRECT_URL\")\n}\n\nmodel Users {\n  id                   BigInt       @id @default(autoincrement())\n  tg_id                BigInt       @unique\n  username             String?\n  name                 String?\n  is_premium           Boolean      @default(false)\n  notification_enabled Boolean      @default(false)\n  created_at           DateTime     @default(now())\n  group_memberships    GroupUsers[]\n  // groups               Groups[]\n\n  @@index([username])\n}\n\nmodel Groups {\n  id                 BigInt       @id @default(autoincrement())\n  tg_id              BigInt       @unique\n  // owner              Users?       @relation(fields: [owner_id], references: [id])\n  // owner_id           BigInt?\n  username           String?\n  title              String?\n  premium_user_count Int          @default(0)\n  active             Boolean      @default(true)\n  created_at         DateTime     @default(now())\n  reward             Rewards?\n  group_users        GroupUsers[]\n}\n\nmodel GroupUsers {\n  id              BigInt           @id @default(autoincrement())\n  group           Groups           @relation(fields: [group_id], references: [id])\n  group_id        BigInt\n  user            Users            @relation(fields: [user_id], references: [id])\n  user_id         BigInt\n  level           Int              @default(1)\n  experience      BigInt           @default(0)\n  message_count   BigInt           @default(0)\n  is_admin        Boolean          @default(false)\n  created_at      DateTime         @default(now())\n  claimed_rewards ClaimedRewards[]\n\n  @@unique([group_id, user_id])\n  @@index([group_id])\n  @@index([user_id])\n}\n\nmodel Rewards {\n  id               BigInt           @id @default(autoincrement())\n  group            Groups           @relation(fields: [group_id], references: [id])\n  group_id         BigInt           @unique\n  // amount           Int              @default(20)\n  appearance_range Int              @default(20)\n  appearance_after Int              @default(20)\n  active           Boolean          @default(false)\n  expires_at       BigInt           @default(0)\n  created_at       DateTime         @default(now())\n  claimed_rewards  ClaimedRewards[]\n}\n\nmodel ClaimedRewards {\n  id            BigInt     @id @default(autoincrement())\n  reward        Rewards    @relation(fields: [reward_id], references: [id])\n  reward_id     BigInt\n  group_user    GroupUsers @relation(fields: [group_user_id], references: [id])\n  group_user_id BigInt\n  claimed_at    DateTime   @default(now())\n\n  @@unique([reward_id, group_user_id])\n  @@index([group_user_id])\n}\n\nmodel Notifications {\n  id           BigInt   @id @default(autoincrement())\n  message      String\n  image_url    String?\n  sent         Boolean  @default(false)\n  for_groups   Boolean  @default(false)\n  scheduled_at BigInt\n  created_at   DateTime @default(now())\n}\n",
   "runtimeDataModel": {
@@ -37,12 +37,14 @@ async function decodeBase64AsWasm(wasmBase64: string): Promise<WebAssembly.Modul
 }
 
 config.compilerWasm = {
-  getRuntime: async () => await import("@prisma/client/runtime/query_compiler_bg.postgresql.js"),
+  getRuntime: async () => await import("@prisma/client/runtime/query_compiler_fast_bg.postgresql.js"),
 
   getQueryCompilerWasmModule: async () => {
-    const { wasm } = await import("@prisma/client/runtime/query_compiler_bg.postgresql.wasm-base64.js")
+    const { wasm } = await import("@prisma/client/runtime/query_compiler_fast_bg.postgresql.wasm-base64.js")
     return await decodeBase64AsWasm(wasm)
-  }
+  },
+
+  importName: "./query_compiler_fast_bg.js"
 }
 
 
