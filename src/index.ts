@@ -258,7 +258,7 @@ bot.command("claim", async (ctx) =>
                 }
             })
         ]);
-        await ctx.react(["⚡", "🎉"], true);
+        await ctx.react(["⚡"], true);
         const reply_name = escapeMarkdownV2(ctx.from.username ? "@" + ctx.from.username : ctx.from.first_name);
         const reply_message = "Congratulations, " + reply_name + "\\! You have successfully claimed your bonus EXP, and you are now *level " + (group_user.level + 1) + "\\!* 🎉";
         await ctx.replyWithMarkdownV2(reply_message, {reply_parameters: {message_id: ctx.msgId}});
@@ -417,7 +417,7 @@ bot.on("message", async (ctx) =>
     if (did_level_up)
     {
         // letting user know they leveled up
-        // await ctx.react("⚡", true);
+        await ctx.react("⚡", true);
         const reply_name = escapeMarkdownV2(ctx.from.username ? "@" + ctx.from.username : ctx.from.first_name);
         const reply_message = "Congratulations, " + reply_name + "\\! You are now *level " + (group_user.level + 1) + "\\!* 🎉";
         await ctx.replyWithMarkdownV2(reply_message, {reply_parameters: {message_id: ctx.msgId}});
@@ -472,7 +472,7 @@ bot.on("message", async (ctx) =>
                 id: reward.id
             }
         });
-        // await ctx.react("⚡", true);
+        await ctx.react("⚡", true);
         await ctx.replyWithSticker("CAACAgIAAyEFAASLO6_0AAIFf2lrwjd0FR_S06urhpE1Q7XanoipAAKMCwACLw_wBoRsyFANo_xWOAQ");
         await ctx.reply("A bonus EXP is being dropped! Active users may receive bonus exp points.\n\nTap /claim to receive your exp!");
     }
