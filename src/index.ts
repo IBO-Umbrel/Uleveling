@@ -480,7 +480,7 @@ bot.command("leaderboard", async (ctx) =>
                 id: top_users[i].user_id
             }
         });
-        leaderboard_message += `\\#${i + 1} ${user?.name || user?.username || "Unknown User"} - Level ${top_users[i].level}\n`;
+        leaderboard_message += `\\#${i + 1} ${user?.name || user?.username || "Unknown User"} \\- Level ${top_users[i].level}\n`;
     }
     ctx.replyWithMarkdownV2(leaderboard_message, {reply_parameters: {message_id: ctx.msgId}});
 });
