@@ -160,7 +160,7 @@ bot.command("enable_rewards", async (ctx) =>
             group_id: group.id
         }
     });
-    ctx.reply("Bonus EXP Reward is now enabled!\n\nAppearance Rate has been set to default (20 messages). To change it, use /change_reward.", {reply_parameters: {message_id: ctx.msgId}});
+    ctx.reply("Bonus EXP Reward is now enabled!\n\nAppearance Rate has been set to default (20 messages). To change it, use /change_rewards.", {reply_parameters: {message_id: ctx.msgId}});
 });
 bot.command("disable_rewards", async (ctx) =>
 {
