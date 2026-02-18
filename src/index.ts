@@ -712,7 +712,7 @@ bot.command("timeout", async (ctx) =>
         },
         until_date: Math.floor((Date.now() / 1000) + (duration_minutes * 60))
     });
-    ctx.reply(`User @${username} has been timed out for ${duration_minutes} minutes.`, {reply_parameters: {message_id: ctx.msgId}});
+    ctx.reply(`User ${username} has been timed out for ${duration_minutes} minutes.`, {reply_parameters: {message_id: ctx.msgId}});
 });
 
 
