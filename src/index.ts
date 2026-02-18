@@ -144,6 +144,92 @@ bot.command("enable_rewards", async (ctx) =>
     });
     ctx.reply("Bonus EXP Reward is now enabled!\n\nAppearance Rate has been set to default (20 messages). To change it, use /change_reward.", {reply_parameters: {message_id: ctx.msgId}});
 });
+bot.command("disable_rewards", async (ctx) =>
+{
+    if (ctx.chat.type === "private")
+    {
+        ctx.reply("This command can be used in groups only!", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    const admins = await bot.telegram.getChatAdministrators(ctx.chat.id);
+    const is_user_admin = admins.find(admin => admin.user.id === ctx.from.id);
+    if (!is_user_admin)
+    {
+        ctx.reply("This command can be used by admins only!", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    const group = await prisma.groups.findUnique({
+        where: {
+            tg_id: ctx.chat.id
+        },
+        include: {
+            reward: true
+        }
+    });
+    if (!group || !group.reward)
+    {
+        ctx.reply("Rewards are not enabled in this group!", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    await prisma.$transaction([
+        prisma.claimedRewards.deleteMany({
+            where: {
+                reward_id: group.reward.id
+            }
+        }),
+        prisma.rewards.delete({
+            where: {
+                id: group.reward.id
+            }
+        })
+    ]);
+
+    ctx.reply("Bonus EXP Reward is now disabled.", {reply_parameters: {message_id: ctx.msgId}});
+});
+bot.command("change_reward", async (ctx) =>
+{
+    if (ctx.chat.type === "private")
+    {
+        ctx.reply("This command can be used in groups only!", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    const admins = await bot.telegram.getChatAdministrators(ctx.chat.id);
+    const is_user_admin = admins.find(admin => admin.user.id === ctx.from.id);
+    if (!is_user_admin)
+    {
+        ctx.reply("This command can be used by admins only!", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    const group = await prisma.groups.findUnique({
+        where: {
+            tg_id: ctx.chat.id
+        },
+        include: {
+            reward: true
+        }
+    });
+    if (!group || !group.reward)
+    {
+        ctx.reply("Rewards are not enabled in this group!", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    const new_appearance_range = parseInt(ctx.message.text.split(" ")[1]);
+    if (isNaN(new_appearance_range) || new_appearance_range < 1)
+    {
+        ctx.reply("Invalid appearance rate! Please provide a positive integer.", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    await prisma.rewards.update({
+        data: {
+            appearance_range: new_appearance_range
+        },
+        where: {
+            id: group.reward.id
+        }
+    });
+
+    ctx.reply(`Appearance rate changed to ${new_appearance_range} messages.`, {reply_parameters: {message_id: ctx.msgId}});
+});
 bot.command("claim", async (ctx) =>
 {
     if (ctx.chat.type === "private")
@@ -342,6 +428,46 @@ bot.command("level", async (ctx) =>
     await ctx.react("👀", true);
     ctx.replyWithMarkdownV2("You are *level " + group_user.level + "* with *" + group_user.message_count + " messages*\\!");
 });
+bot.command("leaderboard", async (ctx) =>
+{
+    if (ctx.chat.type === "private")
+    {
+        ctx.reply("This command can be used in groups only!", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    const group = await prisma.groups.findUnique({
+        where: {
+            tg_id: ctx.chat.id
+        }
+    });
+    if (!group)    
+    {
+        ctx.reply("No data available for this group yet.", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    const top_users = await prisma.groupUsers.findMany({
+        where: {
+            group_id: group.id
+        },
+        orderBy: {
+            level: "desc"
+        },
+        take: 10
+    });
+
+    let leaderboard_message = "🏆 *Leaderboard* 🏆\n\n";
+    for (let i = 0; i < top_users.length; i++)
+    {
+        const user = await prisma.users.findUnique({
+            where: {
+                id: top_users[i].user_id
+            }
+        });
+        leaderboard_message += `#${i + 1} ${user?.name || "Unknown User"} - Level ${top_users[i].level}\n`;
+    }
+    ctx.replyWithMarkdownV2(leaderboard_message, {reply_parameters: {message_id: ctx.msgId}});
+});
+
 
 
 
@@ -560,4 +686,11 @@ async function start()
     process.once('SIGINT', () => bot.stop('SIGINT'))
     process.once('SIGTERM', () => bot.stop('SIGTERM'))
 }
-start();
+
+if (process.env.NODE_ENV === "production")
+    start();
+else
+{
+    bot.launch();
+    console.log("Bot launched in development mode");
+}
