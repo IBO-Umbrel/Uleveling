@@ -539,7 +539,12 @@ bot.command("mute", async (ctx) =>
             can_send_messages: false,
         }
     });
-    const username = ctx.from.username ? "@" + ctx.from.username : ctx.from.first_name;
+    const user = await prisma.users.findUnique({
+        where: {
+            tg_id: BigInt(user_id)
+        }
+    });
+    const username = user?.username ? "@" + user?.username : user?.name || "Unknown User";
     ctx.reply(`User ${username} has been muted.`, {reply_parameters: {message_id: ctx.msgId}});
 });
 bot.command("unmute", async (ctx) =>
@@ -594,7 +599,12 @@ bot.command("unmute", async (ctx) =>
             can_send_messages: true,
         }
     });
-    const username = ctx.from.username ? "@" + ctx.from.username : ctx.from.first_name;
+    const user = await prisma.users.findUnique({
+        where: {
+            tg_id: BigInt(user_id)
+        }
+    });
+    const username = user?.username ? "@" + user?.username : user?.name || "Unknown User";
     ctx.reply(`User ${username} has been unmuted.`, {reply_parameters: {message_id: ctx.msgId}});
 });
 bot.command("ban", async (ctx) =>
@@ -641,7 +651,12 @@ bot.command("ban", async (ctx) =>
         return;
     }
     await ctx.telegram.banChatMember(ctx.chat.id, user_id);
-    const username = ctx.from.username ? "@" + ctx.from.username : ctx.from.first_name;
+    const user = await prisma.users.findUnique({
+        where: {
+            tg_id: BigInt(user_id)
+        }
+    });
+    const username = user?.username ? "@" + user?.username : user?.name || "Unknown User";
     ctx.reply(`User ${username} has been banned.`, {reply_parameters: {message_id: ctx.msgId}});
 });
 bot.command("timeout", async (ctx) =>
@@ -705,7 +720,12 @@ bot.command("timeout", async (ctx) =>
         ctx.reply("Invalid duration! Please provide a positive integer for the duration in minutes (minimum 5 minutes).", {reply_parameters: {message_id: ctx.msgId}});
         return;
     }
-    const username = ctx.from.username ? "@" + ctx.from.username : ctx.from.first_name;
+    const user = await prisma.users.findUnique({
+        where: {
+            tg_id: BigInt(user_id)
+        }
+    });
+    const username = user?.username ? "@" + user?.username : user?.name || "Unknown User";
     await ctx.telegram.restrictChatMember(ctx.chat.id, user_id!, {
         permissions: {
             can_send_messages: false,
