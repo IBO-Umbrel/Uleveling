@@ -72,7 +72,24 @@ async function update_message_exp(id: bigint, new_exp: number, new_message_count
     }
     return false;
 }
-
+async function update_user_name(tg_id: bigint, name: string)
+{
+    try
+    {
+        await prisma.users.update({
+            data: {
+                name: name
+            },
+            where: {
+                tg_id: tg_id
+            }
+        });
+    }
+    catch (err)
+    {
+        console.log("Error updating user name:", err);
+    }
+}
 
 
 bot.start((ctx) =>
@@ -463,9 +480,9 @@ bot.command("leaderboard", async (ctx) =>
                 id: top_users[i].user_id
             }
         });
-        leaderboard_message += `#${i + 1} ${user?.name || "Unknown User"} - Level ${top_users[i].level}\n`;
+        leaderboard_message += `\\#${i + 1} ${user?.name || user?.username || "Unknown User"} - Level ${top_users[i].level}\n`;
     }
-    ctx.replyWithMarkdownV2(escapeMarkdownV2(leaderboard_message), {reply_parameters: {message_id: ctx.msgId}});
+    ctx.replyWithMarkdownV2(leaderboard_message, {reply_parameters: {message_id: ctx.msgId}});
 });
 
 
@@ -474,6 +491,7 @@ bot.command("leaderboard", async (ctx) =>
 // group messages
 bot.on("message", async (ctx) =>
 {
+    update_user_name(BigInt(ctx.from.id), ctx.from.first_name);
     // DMs
     if (ctx.chat.type === "private")
     {
