@@ -204,7 +204,7 @@ bot.command("disable_rewards", async (ctx) =>
 
     ctx.reply("Bonus EXP Reward is now disabled.", {reply_parameters: {message_id: ctx.msgId}});
 });
-bot.command("change_reward", async (ctx) =>
+bot.command("change_rewards", async (ctx) =>
 {
     if (ctx.chat.type === "private")
     {
