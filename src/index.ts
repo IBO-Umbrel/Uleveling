@@ -72,13 +72,14 @@ async function update_message_exp(id: bigint, new_exp: number, new_message_count
     }
     return false;
 }
-async function update_user_name(tg_id: bigint, name: string)
+async function update_user_info(tg_id: bigint, name: string, username: string | null)
 {
     try
     {
         await prisma.users.update({
             data: {
-                name: name
+                name: name,
+                username: username
             },
             where: {
                 tg_id: tg_id
@@ -480,9 +481,237 @@ bot.command("leaderboard", async (ctx) =>
                 id: top_users[i].user_id
             }
         });
-        leaderboard_message += `\\#${i + 1} ${escapeMarkdownV2(user?.name || user?.username || "Unknown User")} \\- Level ${top_users[i].level}\n`;
+        leaderboard_message += `\\#${i + 1} ${escapeMarkdownV2(user?.name || user?.username || "Unknown User")} \\- Level ${top_users[i].level} \\- messages\\: ${top_users[i].message_count}\n`;
     }
     ctx.replyWithMarkdownV2(leaderboard_message, {reply_parameters: {message_id: ctx.msgId}});
+});
+
+// moderation commands (mute, ban, etc.)
+bot.command("mute", async (ctx) =>
+{
+    if (ctx.chat.type === "private")
+    {
+        ctx.reply("This command can be used in groups only!", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    const admins = await bot.telegram.getChatAdministrators(ctx.chat.id);
+    const is_bot_admin = admins.find(admin => admin.user.id === ctx.botInfo.id);
+    if (!is_bot_admin)
+    {
+        ctx.reply("I need to be an admin to mute users! Make me an admin if you want to use moderation feature.", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    const is_user_admin = admins.find(admin => admin.user.id === ctx.from.id);
+    if (!is_user_admin)
+    {
+        ctx.reply("This command can be used by admins only!", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    const user_id = ctx.message.reply_to_message?.from?.id;
+    if (!user_id)
+    {
+        if (ctx.message.text.split(" ").length < 2)
+        {
+            ctx.reply("Please specify a user to mute by replying to their message or providing their username.", {reply_parameters: {message_id: ctx.msgId}});
+            return;
+        }
+        const username = ctx.message.text.split(" ")[1].replace("@", "");
+        const user = await prisma.users.findUnique({
+            where: {
+                username: username
+            }
+        });
+        if (!user)
+        {
+            ctx.reply("User not found!", {reply_parameters: {message_id: ctx.msgId}});
+            return;
+        }
+        await ctx.telegram.restrictChatMember(ctx.chat.id, Number(user.tg_id), {
+            permissions: {
+                can_send_messages: false,
+            }
+        });
+        ctx.reply(`User @${username} has been muted.`, {reply_parameters: {message_id: ctx.msgId}});
+    }
+    await ctx.telegram.restrictChatMember(ctx.chat.id, user_id!, {
+        permissions: {
+            can_send_messages: false,
+        }
+    });
+    const user = await prisma.users.findUnique({
+        where: {
+            tg_id: user_id
+        }
+    });
+    const username = user?.username ? "@" + user.username : user?.name || "";
+    ctx.reply(`User ${username} has been muted.`, {reply_parameters: {message_id: ctx.msgId}});
+});
+bot.command("unmute", async (ctx) =>
+{
+    if (ctx.chat.type === "private")
+    {
+        ctx.reply("This command can be used in groups only!", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    const admins = await bot.telegram.getChatAdministrators(ctx.chat.id);
+    const is_bot_admin = admins.find(admin => admin.user.id === ctx.botInfo.id);
+    if (!is_bot_admin)
+    {
+        ctx.reply("I need to be an admin to unmute users! Make me an admin if you want to use moderation feature.", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    const is_user_admin = admins.find(admin => admin.user.id === ctx.from.id);
+    if (!is_user_admin)
+    {
+        ctx.reply("This command can be used by admins only!", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    const user_id = ctx.message.reply_to_message?.from?.id;
+    if (!user_id)
+    {
+        if (ctx.message.text.split(" ").length < 2)
+        {
+            ctx.reply("Please specify a user to unmute by replying to their message or providing their username.", {reply_parameters: {message_id: ctx.msgId}});
+            return;
+        }
+        const username = ctx.message.text.split(" ")[1].replace("@", "");
+        const user = await prisma.users.findUnique({
+            where: {
+                username: username
+            }
+        });
+        if (!user)
+        {
+            ctx.reply("User not found!", {reply_parameters: {message_id: ctx.msgId}});
+            return;
+        }
+        await ctx.telegram.restrictChatMember(ctx.chat.id, Number(user.tg_id), {
+            permissions: {
+                can_send_messages: true,
+            }
+        });
+        ctx.reply(`User @${username} has been unmuted.`, {reply_parameters: {message_id: ctx.msgId}});
+    }
+    await ctx.telegram.restrictChatMember(ctx.chat.id, user_id!, {
+        permissions: {
+            can_send_messages: true,
+        }
+    });
+    const user = await prisma.users.findUnique({
+        where: {
+            tg_id: user_id
+        }
+    });
+    const username = user?.username ? "@" + user.username : user?.name || "";
+    ctx.reply(`User ${username} has been unmuted.`, {reply_parameters: {message_id: ctx.msgId}});
+});
+bot.command("ban", async (ctx) =>
+{
+    if (ctx.chat.type === "private")
+    {
+        ctx.reply("This command can be used in groups only!", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    const admins = await bot.telegram.getChatAdministrators(ctx.chat.id);
+    const is_bot_admin = admins.find(admin => admin.user.id === ctx.botInfo.id);
+    if (!is_bot_admin)
+    {
+        ctx.reply("I need to be an admin to ban users! Make me an admin if you want to use moderation feature.", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    const is_user_admin = admins.find(admin => admin.user.id === ctx.from.id);
+    if (!is_user_admin)
+    {
+        ctx.reply("This command can be used by admins only!", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    const user_id = ctx.message.reply_to_message?.from?.id;
+    if (!user_id)
+    {
+        if (ctx.message.text.split(" ").length < 2)
+        {
+            ctx.reply("Please specify a user to ban by replying to their message or providing their username.", {reply_parameters: {message_id: ctx.msgId}});
+            return;
+        }
+        const username = ctx.message.text.split(" ")[1].replace("@", "");
+        const user = await prisma.users.findUnique({
+            where: {
+                username: username
+            }
+        });
+        if (!user)
+        {
+            ctx.reply("User not found!", {reply_parameters: {message_id: ctx.msgId}});
+            return;
+        }
+        await ctx.telegram.banChatMember(ctx.chat.id, Number(user.tg_id));
+        ctx.reply(`User @${username} has been banned.`, {reply_parameters: {message_id: ctx.msgId}});
+    }
+    else
+    {
+        await ctx.telegram.banChatMember(ctx.chat.id, user_id);
+        const user = await prisma.users.findUnique({
+            where: {
+                tg_id: user_id
+            }
+        });
+        const username = user?.username ? "@" + user.username : user?.name || "";
+        ctx.reply(`User ${username} has been banned.`, {reply_parameters: {message_id: ctx.msgId}});
+    }
+});
+bot.command("timeout", async (ctx) =>
+{
+    if (ctx.chat.type === "private")
+    {
+        ctx.reply("This command can be used in groups only!", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    const admins = await bot.telegram.getChatAdministrators(ctx.chat.id);
+    const is_bot_admin = admins.find(admin => admin.user.id === ctx.botInfo.id);
+    if (!is_bot_admin)
+    {
+        ctx.reply("I need to be an admin to timeout users! Make me an admin if you want to use moderation feature.", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    const is_user_admin = admins.find(admin => admin.user.id === ctx.from.id);
+    if (!is_user_admin)
+    {
+        ctx.reply("This command can be used by admins only!", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    const user_id = ctx.message.reply_to_message?.from?.id;
+    if (!user_id)
+    {
+        if (ctx.message.text.split(" ").length < 3)
+        {
+            ctx.reply("Please specify a user to timeout by replying to their message or providing their username, and the duration of the timeout in minutes.", {reply_parameters: {message_id: ctx.msgId}});
+            return;
+        }
+        const username = ctx.message.text.split(" ")[1].replace("@", "");
+        const duration_minutes = parseInt(ctx.message.text.split(" ")[2]);
+        if (isNaN(duration_minutes) || duration_minutes < 5)
+        {
+            ctx.reply("Invalid duration! Please provide a positive integer for the duration in minutes (minimum 5 minutes).", {reply_parameters: {message_id: ctx.msgId}});
+            return;
+        }
+        const user = await prisma.users.findUnique({
+            where: {
+                username: username
+            }
+        });
+        if (!user)
+        {
+            ctx.reply("User not found!", {reply_parameters: {message_id: ctx.msgId}});
+            return;
+        }
+        await ctx.telegram.restrictChatMember(ctx.chat.id, Number(user.tg_id), {
+            permissions: {
+                can_send_messages: false,
+            },
+            until_date: Math.floor((Date.now() / 1000) + (duration_minutes * 60))
+        });
+        ctx.reply(`User @${username} has been timed out for ${duration_minutes} minutes.`, {reply_parameters: {message_id: ctx.msgId}});
+    }
 });
 
 
@@ -491,7 +720,7 @@ bot.command("leaderboard", async (ctx) =>
 // group messages
 bot.on("message", async (ctx) =>
 {
-    update_user_name(BigInt(ctx.from.id), ctx.from.first_name);
+    update_user_info(BigInt(ctx.from.id), ctx.from.first_name, ctx.from.username ?? null);
     // DMs
     if (ctx.chat.type === "private")
     {

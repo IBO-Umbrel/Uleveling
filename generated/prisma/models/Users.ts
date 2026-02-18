@@ -253,16 +253,16 @@ export type UsersOrderByWithRelationInput = {
 export type UsersWhereUniqueInput = Prisma.AtLeast<{
   id?: bigint | number
   tg_id?: bigint | number
+  username?: string
   AND?: Prisma.UsersWhereInput | Prisma.UsersWhereInput[]
   OR?: Prisma.UsersWhereInput[]
   NOT?: Prisma.UsersWhereInput | Prisma.UsersWhereInput[]
-  username?: Prisma.StringNullableFilter<"Users"> | string | null
   name?: Prisma.StringNullableFilter<"Users"> | string | null
   is_premium?: Prisma.BoolFilter<"Users"> | boolean
   notification_enabled?: Prisma.BoolFilter<"Users"> | boolean
   created_at?: Prisma.DateTimeFilter<"Users"> | Date | string
   group_memberships?: Prisma.GroupUsersListRelationFilter
-}, "id" | "tg_id">
+}, "id" | "tg_id" | "username">
 
 export type UsersOrderByWithAggregationInput = {
   id?: Prisma.SortOrder

@@ -18,7 +18,7 @@ datasource db {
 model Users {
   id                   BigInt       @id @default(autoincrement())
   tg_id                BigInt       @unique
-  username             String?
+  username             String?      @unique
   name                 String?
   is_premium           Boolean      @default(false)
   notification_enabled Boolean      @default(false)
