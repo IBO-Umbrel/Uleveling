@@ -532,18 +532,14 @@ bot.command("mute", async (ctx) =>
             }
         });
         ctx.reply(`User @${username} has been muted.`, {reply_parameters: {message_id: ctx.msgId}});
+        return;
     }
     await ctx.telegram.restrictChatMember(ctx.chat.id, user_id!, {
         permissions: {
             can_send_messages: false,
         }
     });
-    const user = await prisma.users.findUnique({
-        where: {
-            tg_id: user_id
-        }
-    });
-    const username = user?.username ? "@" + user.username : user?.name || "";
+    const username = ctx.from.username ? "@" + ctx.from.username : ctx.from.first_name;
     ctx.reply(`User ${username} has been muted.`, {reply_parameters: {message_id: ctx.msgId}});
 });
 bot.command("unmute", async (ctx) =>
@@ -591,18 +587,14 @@ bot.command("unmute", async (ctx) =>
             }
         });
         ctx.reply(`User @${username} has been unmuted.`, {reply_parameters: {message_id: ctx.msgId}});
+        return;
     }
     await ctx.telegram.restrictChatMember(ctx.chat.id, user_id!, {
         permissions: {
             can_send_messages: true,
         }
     });
-    const user = await prisma.users.findUnique({
-        where: {
-            tg_id: user_id
-        }
-    });
-    const username = user?.username ? "@" + user.username : user?.name || "";
+    const username = ctx.from.username ? "@" + ctx.from.username : ctx.from.first_name;
     ctx.reply(`User ${username} has been unmuted.`, {reply_parameters: {message_id: ctx.msgId}});
 });
 bot.command("ban", async (ctx) =>
@@ -646,18 +638,11 @@ bot.command("ban", async (ctx) =>
         }
         await ctx.telegram.banChatMember(ctx.chat.id, Number(user.tg_id));
         ctx.reply(`User @${username} has been banned.`, {reply_parameters: {message_id: ctx.msgId}});
+        return;
     }
-    else
-    {
-        await ctx.telegram.banChatMember(ctx.chat.id, user_id);
-        const user = await prisma.users.findUnique({
-            where: {
-                tg_id: user_id
-            }
-        });
-        const username = user?.username ? "@" + user.username : user?.name || "";
-        ctx.reply(`User ${username} has been banned.`, {reply_parameters: {message_id: ctx.msgId}});
-    }
+    await ctx.telegram.banChatMember(ctx.chat.id, user_id);
+    const username = ctx.from.username ? "@" + ctx.from.username : ctx.from.first_name;
+    ctx.reply(`User ${username} has been banned.`, {reply_parameters: {message_id: ctx.msgId}});
 });
 bot.command("timeout", async (ctx) =>
 {
@@ -711,7 +696,23 @@ bot.command("timeout", async (ctx) =>
             until_date: Math.floor((Date.now() / 1000) + (duration_minutes * 60))
         });
         ctx.reply(`User @${username} has been timed out for ${duration_minutes} minutes.`, {reply_parameters: {message_id: ctx.msgId}});
+        return;
     }
+
+    const duration_minutes = parseInt(ctx.message.text.split(" ")[1]);
+    if (isNaN(duration_minutes) || duration_minutes < 5)
+    {
+        ctx.reply("Invalid duration! Please provide a positive integer for the duration in minutes (minimum 5 minutes).", {reply_parameters: {message_id: ctx.msgId}});
+        return;
+    }
+    const username = ctx.from.username ? "@" + ctx.from.username : ctx.from.first_name;
+    await ctx.telegram.restrictChatMember(ctx.chat.id, user_id!, {
+        permissions: {
+            can_send_messages: false,
+        },
+        until_date: Math.floor((Date.now() / 1000) + (duration_minutes * 60))
+    });
+    ctx.reply(`User @${username} has been timed out for ${duration_minutes} minutes.`, {reply_parameters: {message_id: ctx.msgId}});
 });
 
 
