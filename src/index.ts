@@ -97,7 +97,17 @@ bot.start((ctx) =>
 {
     if (ctx.chat.type === "private")
     {
-        ctx.reply("Hello! Add Uleveling Bot to your Telegram group to start leveling engagement in your community.");
+        ctx.reply(`Introducing Uleveling Bot - the ultimate Telegram bot for tracking user engagement and rewarding active members in your group! 🚀
+
+Features:
+— Leveling system based on user activity
+— Bonus EXP rewards for active users
+— Customizable reward appearance rate
+— User-friendly commands to check levels and claim rewards
+— Leaderboard to showcase top members
+— Moderation tools for admins (mute, ban, timeout)
+
+To use this bot, simply add it to your group and it will start tracking user engagement automatically.`);
         return;
     }
 });
@@ -962,3 +972,19 @@ else
     bot.launch();
     console.log("Bot launched in development mode");
 }
+
+
+// a social media post for users as promotion (short and showing only features as bullet points: short bullet points without descriptions, emojis, and a call to action at the end):
+/*
+Introducing Uleveling Bot - the ultimate Telegram bot for tracking user engagement and rewarding active members in your group! 🚀
+
+Features:
+— Leveling system based on user activity
+— Bonus EXP rewards for active users
+— Customizable reward appearance rate
+— User-friendly commands to check levels and claim rewards
+— Leaderboard to showcase top members
+— Moderation tools for admins (mute, ban, timeout)
+
+Join the Uleveling Bot community today and start leveling up your Telegram group engagement! 🎉
+*/

@@ -95,3 +95,22 @@ model Notifications {
   scheduled_at BigInt
   created_at   DateTime @default(now())
 }
+
+
+// enum EventType {
+//   ONCE
+//   DAILY
+//   WEEKLY
+//   MONTHLY
+// }
+
+
+// model Events {
+//   id          BigInt   @id @default(autoincrement())
+//   type        EventType @default(WEEKLY)
+//   name        String
+//   details     String?
+//   scheduled_at BigInt
+//   last_triggered_at BigInt @default(0)
+//   created_at  DateTime @default(now())
+// }
